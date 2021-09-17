@@ -18,14 +18,13 @@ class ViewController: UIViewController {
         // Do any additional setup after loading the view, typically from a nib.
 
         let tasks = (0..<10).map { idx -> AsyncTask in
-            let task = AsyncTask(priority: .custom(idx)) { task in
+            return AsyncTask(priority: .custom(idx)) { task in
                 print("t\(idx) start")
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                     print("t\(idx) end")
                     task.finish()
                 }
             }
-            return task
         }
         
         queue.add(tasks: tasks)
