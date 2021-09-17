@@ -1,0 +1,16 @@
+PODS:
+  - AsyncTask (0.1.0)
+
+DEPENDENCIES:
+  - AsyncTask (from `../`)
+
+EXTERNAL SOURCES:
+  AsyncTask:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  AsyncTask: 8b6082504ba13943d374429e490c79a05b318b31
+
+PODFILE CHECKSUM: d779be475fda40b3e5198e9cae27f818f51a4842
+
+COCOAPODS: 1.10.2
