@@ -17,9 +17,8 @@ public struct Queue<Element> {
     
     @discardableResult
     public func dequeue() -> Element? {
-        guard !list.isEmpty, let element = list.first else { return nil }
-        list.remove(node: element)
-        return element.value
+        guard !list.isEmpty else { return nil }
+        return list.remove(at: 0)
     }
     
     public func enqueue(_ newElement: Element) {
