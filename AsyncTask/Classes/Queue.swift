@@ -7,46 +7,46 @@
 
 import Foundation
 
-struct Queue<Element> {
-    fileprivate var dataArea: [Element]
+public struct Queue<Element> {
     
-    public init() {
-        dataArea = [Element]()
-    }
+    private let list = LinkedList<Element>()
     
-    public var all: [Element] { return dataArea }
-    public var first: Element? { return dataArea.first }
-    public var last: Element? { return dataArea.last }
-    public var isEmpty: Bool { return dataArea.isEmpty }
-    public var length: Int { return dataArea.count }
+    public var isEmpty: Bool { list.isEmpty }
+    
+    public var length: Int { return list.length }
     
     @discardableResult
-    public mutating func dequeue() -> Element? {
-        if isEmpty { return nil }
-        return dataArea.removeFirst()
+    public func dequeue() -> Element? {
+        guard !list.isEmpty, let element = list.first else { return nil }
+        list.remove(node: element)
+        return element.value
     }
     
-    public mutating func enqueue(_ newElement: Element) {
-        dataArea.append(newElement)
+    public func enqueue(_ newElement: Element) {
+        list.append(value: newElement)
     }
     
-    public mutating func dequeueAll() -> [Element]? {
-        let res = dataArea;
-        dataArea.removeAll()
-        return res
-    }
-    
-    @inlinable
-    public mutating func sort(by areInIncreasingOrder: (Element, Element) throws -> Bool) rethrows {
-        try dataArea.sort(by: areInIncreasingOrder)
+    public func peek() -> Element? {
+        return list.first?.value
     }
 }
 
-
 extension Queue : ExpressibleByArrayLiteral {
+    
     public typealias ArrayLiteralElement = Element
     
     public init(arrayLiteral elements: Self.ArrayLiteralElement...) {
-        dataArea = elements
+        elements.forEach { list.append(value: $0) }
+    }
+}
+
+extension Queue {
+    
+    public func forEach(_ body: (Element) throws -> Void) rethrows {
+        try list.forEach(body)
+    }
+    
+    public func sort(by areInIncreasingOrder: (Element, Element) throws -> Bool) rethrows {
+        try list.sort(by: areInIncreasingOrder)
     }
 }

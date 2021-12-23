@@ -54,7 +54,7 @@ public final class AsyncTaskQueue {
     
     private func execute() {
         guard !isSuspended else { return }
-        guard let task = taskQueue.first else { return }
+        guard let task = taskQueue.peek() else { return }
         
         switch task.state {
         case .runing: return
@@ -84,7 +84,7 @@ public final class AsyncTaskQueue {
         defer {
             objc_sync_exit(lockValue)
         }
-        taskQueue.all.forEach { $0.cancel() }
+        taskQueue.forEach { $0.cancel() }
     }
 }
 

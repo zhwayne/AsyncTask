@@ -26,7 +26,7 @@ class ViewController: UIViewController {
                 }
             }
         }
-        
+
         queue.add(tasks: tasks)
     }
 

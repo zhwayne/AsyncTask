@@ -9,6 +9,7 @@ import Foundation
 
 public extension AsyncTask {
     
+    /// 任务优先级
     enum Priority {
         case low
         case `default`
