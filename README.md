@@ -9,6 +9,22 @@
 
 To run the example project, clone the repo, and run `pod install` from the Example directory first.
 
+## Usage
+
+```swift
+let tasks = (0..<10).map { idx -> AsyncTask in
+  return AsyncTask(priority: .custom(idx)) { task in
+    print("t\(idx) start")
+    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+      print("t\(idx) end")  
+      task.finish()
+    }
+  }
+}
+
+queue.add(tasks: tasks)
+```
+
 ## Requirements
 
 ## Installation
