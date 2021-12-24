@@ -15,6 +15,8 @@ open class AsyncTask {
     
     public var completion: (() -> Void)?
     
+    var finishHandler: (() -> Void)?
+    
     var state: State = .idle {
         didSet { stateDidChange?(state) }
     }
@@ -33,10 +35,20 @@ open class AsyncTask {
     }
     
     open func finish() {
+        guard state != .finished && state != .canceled else { return }
         state = .finished
+        finishHandler?()
     }
     
     open func cancel() {
+        guard state != .finished && state != .canceled else { return }
         state = .canceled
+    }
+}
+
+extension AsyncTask: CustomStringConvertible {
+    
+    public var description: String {
+        return "\(type(of: self))(priority: \(priority), state: \(state)"
     }
 }

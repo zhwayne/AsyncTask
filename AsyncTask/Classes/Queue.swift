@@ -7,45 +7,49 @@
 
 import Foundation
 
-public struct Queue<Element> {
+struct Queue<Element> {
     
-    private let list = LinkedList<Element>()
+    private var list = [Element]()
+        
+    var isEmpty: Bool { list.isEmpty }
     
-    public var isEmpty: Bool { list.isEmpty }
-    
-    public var length: Int { return list.length }
+    var length: Int { return list.count }
     
     @discardableResult
-    public func dequeue() -> Element? {
+    mutating func dequeue() -> Element? {
         guard !list.isEmpty else { return nil }
-        return list.remove(at: 0)
+        return list.removeFirst()
     }
     
-    public func enqueue(_ newElement: Element) {
-        list.append(value: newElement)
+    mutating func enqueue(_ newElement: Element) {
+        list.append(newElement)
     }
     
-    public func peek() -> Element? {
-        return list.first?.value
+    func peek() -> Element? {
+        return list.first
     }
 }
 
 extension Queue : ExpressibleByArrayLiteral {
     
-    public typealias ArrayLiteralElement = Element
+    typealias ArrayLiteralElement = Element
     
-    public init(arrayLiteral elements: Self.ArrayLiteralElement...) {
-        elements.forEach { list.append(value: $0) }
+    init(arrayLiteral elements: Self.ArrayLiteralElement...) {
+        list.append(contentsOf: elements)
+    }
+    
+    init(arrayLiteral elements: [Self.ArrayLiteralElement]) {
+        list.append(contentsOf: elements)
     }
 }
 
 extension Queue {
     
-    public func forEach(_ body: (Element) throws -> Void) rethrows {
+    func forEach(_ body: (Element) throws -> Void) rethrows {
         try list.forEach(body)
     }
     
-    public func sort(by areInIncreasingOrder: (Element, Element) throws -> Bool) rethrows {
+    public mutating func sort(by areInIncreasingOrder: (Element, Element) throws -> Bool) rethrows {
         try list.sort(by: areInIncreasingOrder)
     }
 }

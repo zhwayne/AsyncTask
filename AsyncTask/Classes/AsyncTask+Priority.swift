@@ -64,3 +64,25 @@ extension AsyncTask.Priority: Comparable {
         return lhs.value > rhs.value
     }
 }
+
+extension AsyncTask: Comparable {
+    public static func == (lhs: AsyncTask, rhs: AsyncTask) -> Bool {
+        return lhs.priority == rhs.priority
+    }
+    
+    public static func < (lhs: AsyncTask, rhs: AsyncTask) -> Bool {
+        return lhs.priority < rhs.priority
+    }
+    
+    public static func <= (lhs: AsyncTask, rhs: AsyncTask) -> Bool {
+        return lhs.priority <= rhs.priority
+    }
+    
+    public static func >= (lhs: AsyncTask, rhs: AsyncTask) -> Bool {
+        return lhs.priority >= rhs.priority
+    }
+    
+    public static func > (lhs: AsyncTask, rhs: AsyncTask) -> Bool {
+        return lhs.priority > rhs.priority
+    }
+}

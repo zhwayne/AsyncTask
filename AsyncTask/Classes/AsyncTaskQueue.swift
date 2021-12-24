@@ -9,96 +9,77 @@ import Foundation
 
 public final class AsyncTaskQueue {
     
-    private var taskQueue = Queue<AsyncTask>()
-    private var executeQueue = DispatchQueue(label: "AsyncTaskExecuteQueue")
-    private let lockValue = 0
+    private var pendingQueue = Queue<AsyncTask>()
+    private var executingQueue = Queue<AsyncTask>() // only one task
+    private var thread: Thread!
+    private var isWorking = true
+    private var runloop: CFRunLoop!
     
-    public var isSuspended = false {
-        didSet { if !isSuspended { willExecute() } }
+    public var isSuspended = false
+    
+    deinit {
+        isWorking = false
     }
     
-    public init() {}
+    public init() {
+        thread = Thread(block: { [weak self] in
+            guard let runloop = CFRunLoopGetCurrent() else {
+                fatalError()
+            }
+            print("Runloop start.")
+            self?.runloop = runloop
+            var sourceCtx = CFRunLoopSourceContext()
+            let source = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &sourceCtx)
+            CFRunLoopAddSource(runloop, source, .commonModes)
+            
+            while case let working = self?.isWorking, working == true {
+                self?.execute()
+                CFRunLoopRunInMode(.defaultMode, 0.01, false)
+            }
+            CFRunLoopRemoveSource(runloop, source, .commonModes)
+            print("Runloop destroyed, and all task has been removed.")
+        })
+        thread.name = "AsyncTaskThread"
+        thread.start()
+    }
     
     public func add(tasks: [AsyncTask]) {
-        objc_sync_enter(lockValue)
-        defer {
-            objc_sync_exit(lockValue)
-        }
-        tasks.forEach {
-            guard $0.state == .idle else { return }
-            enqueue(task: $0)
-            $0.state = .ready
-        }
-        sortQueueTasks()
-        willExecute()
+        tasks.forEach { add(task: $0) }
     }
     
     public func add(task: AsyncTask) {
-        objc_sync_enter(lockValue)
-        defer {
-            objc_sync_exit(lockValue)
-        }
         guard task.state == .idle else { return }
-        enqueue(task: task)
-        sortQueueTasks()
         task.state = .ready
-        willExecute()
-    }
-    
-    private func willExecute() {
-        guard !isSuspended else { return }
-        executeQueue.async { [weak self] in
-            self?.execute()
-        }
+        print("Add task \(task)")
+        pendingQueue.enqueue(task)
     }
     
     private func execute() {
         guard !isSuspended else { return }
-        guard let task = taskQueue.peek() else { return }
         
-        switch task.state {
-        case .runing: return
-        case .idle, .canceled, .finished:
-            defer { execute() }
-            dequeue()
-            return
-        case .ready:
-            task.state = .runing
-            task.stateDidChange = { [weak self, weak task] state in
-                self?.executeQueue.async {
-                    if state == .canceled || state == .finished {
-                        defer {
-                            self?.willExecute()
-                        }
-                        self?.dequeue()
-                        task?.completion?()
-                    }
-                }
+        if let task = executingQueue.peek() {
+            guard task.state == .canceled || task.state == .finished else {
+                return
             }
-            task.execute()
+            executingQueue.dequeue()
+            task.completion?()
         }
+        
+        guard !pendingQueue.isEmpty else { return }
+        
+        pendingQueue.sort { $0 > $1 }
+        guard let task = pendingQueue.dequeue() else { return }
+        
+        guard task.state == .ready else {
+            return
+        }
+        
+        task.state = .runing
+        executingQueue.enqueue(task)
+        task.execute()
     }
     
     public func cancelAll() {
-        objc_sync_enter(lockValue)
-        defer {
-            objc_sync_exit(lockValue)
-        }
-        taskQueue.forEach { $0.cancel() }
-    }
-}
-
-extension AsyncTaskQueue {
-    
-    private func enqueue(task: AsyncTask) {
-        taskQueue.enqueue(task)
-    }
-    
-    private func sortQueueTasks() {
-        taskQueue.sort { $0.priority > $1.priority }
-    }
-    
-    private func dequeue() {
-        taskQueue.dequeue()
+        pendingQueue.forEach { $0.cancel() }
     }
 }
