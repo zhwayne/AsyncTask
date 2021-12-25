@@ -11,38 +11,26 @@ import AsyncTask
 
 class ViewController: UIViewController {
     
-//    let queue1 = AsyncTaskQueue()
-//    let queue2 = AsyncTaskQueue()
-//    let queue3 = AsyncTaskQueue()
-//    let queue4 = AsyncTaskQueue()
-//    let queue5 = AsyncTaskQueue()
-//
-    var queue: AsyncTaskQueue?
+    var queue: AsyncQueue?
 
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-        queue = AsyncTaskQueue()
+        queue = AsyncQueue()
 
-        let tasks = (0..<10).map { idx -> AsyncTask in
-            return AsyncTask(priority: .custom(idx)) { task in
-                task.completion = {
-                    print("\(CFAbsoluteTimeGetCurrent()) t\(idx) end")
-                }
-                print("\(CFAbsoluteTimeGetCurrent()) t\(idx) start")
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.001) {
-                    print("\(CFAbsoluteTimeGetCurrent()) t\(idx) finish")
-                    task.finish()
-                }
-            }
+        queue?.add(tasks: makeTasks(count: 1000))
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            self.queue?.add(tasks: self.makeTasks(count: 1000))
         }
 
-        queue?.add(tasks: tasks)
-        
-        
-//        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-//            self.queue = nil
-//        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
+            self.queue?.add(tasks: self.makeTasks(count: 1000))
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+            self.queue = nil
+        }
     }
 
     override func didReceiveMemoryWarning() {
@@ -50,5 +38,17 @@ class ViewController: UIViewController {
         // Dispose of any resources that can be recreated.
     }
 
+    private func makeTasks(count: Int) -> [AsyncTask] {
+        (0..<count).map { idx -> AsyncTask in
+            return AsyncTask(priority: .custom(idx)) { task in
+                //                let _ = (0..<200).map {
+                //                    return (0..<$0).map { $0 * 2 }
+                //                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.001) {
+                    task.finish()
+                }
+            }
+        }
+    }
 }
 
