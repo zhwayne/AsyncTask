@@ -18,13 +18,7 @@ public final class AsyncQueue {
     
     private let lock = UnfairLock()
     
-    public var isSuspended = false {
-        didSet { if !isSuspended {
-            lock.withLockVoid { [unowned self] in
-                CFRunLoopStop(runloop)
-            }
-        } }
-    }
+    public private(set) var isSuspended = false
     
     deinit {
         pendingQueue.forEach { $0.cancel() }
@@ -34,16 +28,19 @@ public final class AsyncQueue {
     
     public init() {
         thread = Thread(block: { [weak self] in
-            guard let runloop = CFRunLoopGetCurrent() else {
-                fatalError()
-            }
             print("Runloop start.")
+            let runloop = CFRunLoopGetCurrent()
             self?.runloop = runloop
+            var pendingTaskCount = 0
             var sourceCtx = CFRunLoopSourceContext()
             let source = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &sourceCtx)
-            CFRunLoopAddSource(runloop, source, .commonModes)
             
-            var pendingTaskCount = 0
+            CFRunLoopAddSource(runloop, source, .commonModes)
+            defer {
+                CFRunLoopRemoveSource(runloop, source, .commonModes)
+                print("Runloop destroyed, and all pending \(pendingTaskCount) task(s) has been canceled.")
+            }
+            
             while case let working = self?.isWorking, working == true {
                 CFRunLoopRunInMode(.defaultMode, 0.001, true)
                 print("Async queue will going to execute next task.")
@@ -56,8 +53,6 @@ public final class AsyncQueue {
                     pendingTaskCount = length
                 }
             }
-            CFRunLoopRemoveSource(runloop, source, .commonModes)
-            print("Runloop destroyed, and all pending \(pendingTaskCount) task(s) has been canceled.")
         })
         thread.name = "AsyncTaskThread"
         thread.start()
@@ -149,6 +144,19 @@ public final class AsyncQueue {
                 $0.cancel()
                 print("\($0) canceled.")
             }
+        }
+    }
+    
+    public func suspend() {
+        lock.withLockVoid { [unowned self] in
+            isSuspended = true
+        }
+    }
+    
+    public func resume() {
+        lock.withLockVoid { [unowned self] in
+            isSuspended = false
+            CFRunLoopStop(runloop)
         }
     }
 }
