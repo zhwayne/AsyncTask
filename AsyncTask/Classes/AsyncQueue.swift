@@ -42,7 +42,7 @@ public final class AsyncQueue {
             }
             
             while case let working = self?.isWorking, working == true {
-                CFRunLoopRunInMode(.defaultMode, 0.001, true)
+                CFRunLoopRunInMode(.defaultMode, 0.01, true)
                 print("Async queue will going to execute next task.")
                 if let ret = self?.executeNext(), ret == true {
                     print("Runloop is about to be paused.")
