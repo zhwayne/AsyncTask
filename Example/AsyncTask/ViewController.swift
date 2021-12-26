@@ -18,18 +18,18 @@ class ViewController: UIViewController {
         // Do any additional setup after loading the view, typically from a nib.
         queue = AsyncQueue()
 
-        queue?.add(tasks: makeTasks(count: 1000))
+        queue?.add(tasks: makeTasks(count: 500))
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-            self.queue?.add(tasks: self.makeTasks(count: 1000))
+            self.queue?.add(tasks: self.makeTasks(count: 500))
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
-            self.queue?.add(tasks: self.makeTasks(count: 1000))
+            self.queue?.add(tasks: self.makeTasks(count: 500))
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
-            self.queue = nil
+//            self.queue = nil
         }
     }
 
@@ -44,7 +44,7 @@ class ViewController: UIViewController {
                 //                let _ = (0..<200).map {
                 //                    return (0..<$0).map { $0 * 2 }
                 //                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.001) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
                     task.finish()
                 }
             }

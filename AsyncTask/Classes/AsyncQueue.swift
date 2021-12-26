@@ -18,7 +18,13 @@ public final class AsyncQueue {
     
     private let lock = UnfairLock()
     
-    public var isSuspended = false
+    public var isSuspended = false {
+        didSet { if !isSuspended {
+            lock.withLockVoid { [unowned self] in
+                CFRunLoopStop(runloop)
+            }
+        } }
+    }
     
     deinit {
         pendingQueue.forEach { $0.cancel() }
@@ -42,7 +48,9 @@ public final class AsyncQueue {
                 CFRunLoopRunInMode(.defaultMode, 0.001, true)
                 print("Async queue will going to execute next task.")
                 if let ret = self?.executeNext(), ret == true {
+                    print("Runloop is about to be paused.")
                     CFRunLoopRun()
+                    print("Runloop is resumed.")
                 }
                 if let length = self?.pendingQueue.length {
                     pendingTaskCount = length
