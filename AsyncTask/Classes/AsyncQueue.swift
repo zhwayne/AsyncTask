@@ -96,22 +96,20 @@ public final class AsyncQueue {
             }
             
             if let task = executingQueue.peek() {
-                if task.state == .runing {
+                if task.state == .runing || task.state == .canceled {
                     print("\(task) is still executing. this operation will be ignored.")
                     return false
                 }
                 executingQueue.dequeue()
-            }
-            
-            guard !pendingQueue.isEmpty else {
-                print("There are no tasks waiting to be executed.")
-                return true
+                print("Execute \(task) completion block.")
+                task.completion?()
+                return false
             }
             
             pendingQueue.sort { $0 > $1 }
             guard let task = pendingQueue.dequeue() else {
                 print("There are no tasks waiting to be executed.")
-                return false
+                return true
             }
             guard task.state == .ready else {
                 print("\(task) has been canceled.")
@@ -126,7 +124,6 @@ public final class AsyncQueue {
                 guard task.state == .finished else {
                     return
                 }
-                task.completion?()
                 print("\(task) did finished.")
             }
             task.execute()
