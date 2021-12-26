@@ -16,7 +16,7 @@ public final class AsyncQueue {
     private var isWorking = true
     private var runloop: CFRunLoop!
     
-    private let lock = UnfairLock()
+    private let lock = Lock()
     
     public private(set) var isSuspended = false
     
