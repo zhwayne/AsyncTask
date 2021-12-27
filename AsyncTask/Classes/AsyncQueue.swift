@@ -44,14 +44,16 @@ public final class AsyncQueue {
             while case let working = self?.isWorking, working == true {
                 CFRunLoopRunInMode(.defaultMode, 0.01, true)
                 print("Async queue will going to execute next task.")
-                if let ret = self?.executeNext(), ret == true {
+                do {
+                    try self?.executeNext()
+                    if let length = self?.pendingQueue.length {
+                        pendingTaskCount = length
+                    }
+                } catch ExexutingError.suspend {
                     print("Runloop is about to be paused.")
                     CFRunLoopRun()
                     print("Runloop is resumed.")
-                }
-                if let length = self?.pendingQueue.length {
-                    pendingTaskCount = length
-                }
+                } catch {}
             }
         })
         thread.name = "AsyncTaskThread"
@@ -88,32 +90,32 @@ public final class AsyncQueue {
         }
     }
     
-    private func executeNext() -> Bool {
-        return lock.withLock { [unowned self] in
+    private func executeNext() throws {
+        return try lock.withLock { [unowned self] in
             guard !isSuspended else {
                 print("Async queue is suspended.")
-                return true
+                throw ExexutingError.suspend
             }
             
             if let task = executingQueue.peek() {
                 if task.state == .runing || task.state == .canceled {
                     print("\(task) is still executing. this operation will be ignored.")
-                    return false
+                    throw ExexutingError.ignore
                 }
                 executingQueue.dequeue()
                 print("Execute \(task) completion block.")
                 task.completion?()
-                return false
+                throw ExexutingError.ignore
             }
             
             pendingQueue.sort { $0 > $1 }
             guard let task = pendingQueue.dequeue() else {
                 print("There are no tasks waiting to be executed.")
-                return true
+                throw ExexutingError.suspend
             }
             guard task.state == .ready else {
                 print("\(task) has been canceled.")
-                return false
+                throw ExexutingError.ignore
             }
             
             print("\(task) is about to be executed.")
@@ -128,7 +130,6 @@ public final class AsyncQueue {
             }
             task.execute()
             print("\(task) is executing.")
-            return false
         }
     }
     
@@ -155,5 +156,13 @@ public final class AsyncQueue {
             isSuspended = false
             CFRunLoopStop(runloop)
         }
+    }
+}
+
+extension AsyncQueue {
+    
+    private enum ExexutingError: Error {
+        case suspend
+        case ignore
     }
 }
