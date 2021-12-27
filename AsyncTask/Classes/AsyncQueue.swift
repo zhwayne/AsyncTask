@@ -20,7 +20,7 @@ public final class AsyncQueue {
     
     public private(set) var isSuspended = false
     
-    static var isLogEnabled = false
+    public static var isLogEnabled = false
     
     deinit {
         pendingQueue.forEach { $0.cancel() }

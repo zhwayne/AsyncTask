@@ -37,7 +37,7 @@ open class AsyncTask {
     
     private let semaphore = DispatchSemaphore(value: 0)
 
-    public init(priority: Priority = .default, _ code: @escaping (AsyncTask) -> Void) {
+    public init(priority: Priority = .default, _ code: @escaping (AsyncTask) -> Void = { _ in }) {
         self.priority = priority
         self.code = code
     }

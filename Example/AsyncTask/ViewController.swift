@@ -16,39 +16,39 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+        AsyncQueue.isLogEnabled = true
+        
         queue = AsyncQueue()
-
-        queue?.add(tasks: makeTasks(count: 500))
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            let task = AlertTask(baseViewController: self, priority: .default)
+            self.queue?.add(task: task)
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            let task = AlertTask(baseViewController: self, priority: .low)
+            self.queue?.add(task: task)
+        }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-            self.queue?.add(tasks: self.makeTasks(count: 500))
+            let task = AlertTask(baseViewController: self, priority: .default)
+            self.queue?.add(task: task)
         }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
-            self.queue?.add(tasks: self.makeTasks(count: 500))
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
+            let task = AlertTask(baseViewController: self, priority: .hight)
+            self.queue?.add(task: task)
         }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
-//            self.queue = nil
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+            let task = AlertTask(baseViewController: self, priority: .custom(600))
+            self.queue?.add(task: task)
         }
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
-    }
-
-    private func makeTasks(count: Int) -> [AsyncTask] {
-        (0..<count).map { idx -> AsyncTask in
-            return AsyncTask(priority: .custom(idx)) { task in
-                //                let _ = (0..<200).map {
-                //                    return (0..<$0).map { $0 * 2 }
-                //                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
-                    task.finish()
-                }
-            }
-        }
     }
 }
 
