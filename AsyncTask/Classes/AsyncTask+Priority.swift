@@ -10,79 +10,50 @@ import Foundation
 public extension AsyncTask {
     
     /// 任务优先级
-    enum Priority {
-        case low
-        case `default`
-        case hight
-        case custom(Int)
+    struct Priority {
+        fileprivate var rawValue: Int = 0
+        fileprivate init(rawValue: Int) {
+            self.rawValue = rawValue
+        }
+
+        public static let background      = Self(rawValue: 0)
+        public static let low             = Self(rawValue: 250)
+        public static let `default`       = Self(rawValue: 500)
+        public static let hight           = Self(rawValue: 750)
+        public static let userInteractive = Self(rawValue: 1000)
     }
 }
 
 extension AsyncTask.Priority {
     
-    var value: Int {
-        switch self {
-        case .low:      return 250
-        case .default:  return 500
-        case .hight:    return 750
-        case .custom(let priority): return priority
-        }
-    }
-    
     public static func + (lhs: Self, rhs: Int) -> Self {
-        return .custom(lhs.value + rhs)
+        return Self(rawValue: lhs.rawValue + rhs)
     }
     
     public static func - (lhs: Self, rhs: Int) -> Self {
-        return .custom(lhs.value - rhs)
-    }
-    
-    public static func * (lhs: Self, rhs: Int) -> Self {
-        return .custom(lhs.value * rhs)
+        return Self(rawValue: lhs.rawValue - rhs)
     }
 }
 
 extension AsyncTask.Priority: Comparable {
     
     public static func == (lhs: Self, rhs: Self) -> Bool {
-        return lhs.value == rhs.value
+        return lhs.rawValue == rhs.rawValue
     }
     
     public static func < (lhs: Self, rhs: Self) -> Bool {
-        return lhs.value < rhs.value
+        return lhs.rawValue < rhs.rawValue
     }
     
     public static func <= (lhs: Self, rhs: Self) -> Bool {
-        return lhs.value <= rhs.value
+        return lhs.rawValue <= rhs.rawValue
     }
     
     public static func >= (lhs: Self, rhs: Self) -> Bool {
-        return lhs.value >= rhs.value
+        return lhs.rawValue >= rhs.rawValue
     }
     
     public static func > (lhs: Self, rhs: Self) -> Bool {
-        return lhs.value > rhs.value
-    }
-}
-
-extension AsyncTask: Comparable {
-    public static func == (lhs: AsyncTask, rhs: AsyncTask) -> Bool {
-        return lhs.priority == rhs.priority
-    }
-    
-    public static func < (lhs: AsyncTask, rhs: AsyncTask) -> Bool {
-        return lhs.priority < rhs.priority
-    }
-    
-    public static func <= (lhs: AsyncTask, rhs: AsyncTask) -> Bool {
-        return lhs.priority <= rhs.priority
-    }
-    
-    public static func >= (lhs: AsyncTask, rhs: AsyncTask) -> Bool {
-        return lhs.priority >= rhs.priority
-    }
-    
-    public static func > (lhs: AsyncTask, rhs: AsyncTask) -> Bool {
-        return lhs.priority > rhs.priority
+        return lhs.rawValue > rhs.rawValue
     }
 }

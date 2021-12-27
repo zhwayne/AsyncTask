@@ -112,7 +112,7 @@ public final class AsyncQueue {
                 throw ExexutingError.ignore
             }
             
-            pendingQueue.sort { $0 > $1 }
+            pendingQueue.sort { $0.priority > $1.priority }
             guard let task = pendingQueue.dequeue() else {
                 logger("There are no tasks waiting to be executed.")
                 throw ExexutingError.suspend

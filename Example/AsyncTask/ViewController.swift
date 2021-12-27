@@ -41,9 +41,8 @@ class ViewController: UIViewController {
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-            let task = AlertTask(baseViewController: self, priority: .custom(600))
+            let task = AlertTask(baseViewController: self, priority: .default + 100)
             self.queue?.add(task: task)
-            
             print(self.queue!)
         }
     }
