@@ -27,11 +27,13 @@ public extension AsyncTask {
 extension AsyncTask.Priority {
     
     public static func + (lhs: Self, rhs: Int) -> Self {
-        return Self(rawValue: lhs.rawValue + rhs)
+        let priority = Self(rawValue: lhs.rawValue + rhs)
+        return min(priority, .userInteractive)
     }
     
     public static func - (lhs: Self, rhs: Int) -> Self {
-        return Self(rawValue: lhs.rawValue - rhs)
+        let priority = Self(rawValue: lhs.rawValue - rhs)
+        return max(priority, .background)
     }
 }
 
