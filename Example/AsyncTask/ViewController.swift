@@ -16,8 +16,8 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-        AsyncQueue.isLogEnabled = true
         
+        // AsyncQueue.isLogEnabled = true
         queue = AsyncQueue()
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
@@ -43,6 +43,8 @@ class ViewController: UIViewController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
             let task = AlertTask(baseViewController: self, priority: .custom(600))
             self.queue?.add(task: task)
+            
+            print(self.queue!)
         }
     }
 

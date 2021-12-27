@@ -18,6 +18,8 @@ public final class AsyncQueue {
     
     private let lock = Lock()
     
+    public let identifier = UUID().uuidString
+    
     public private(set) var isSuspended = false
     
     public static var isLogEnabled = false
@@ -158,6 +160,27 @@ public final class AsyncQueue {
             isSuspended = false
             CFRunLoopStop(runloop)
         }
+    }
+}
+
+extension AsyncQueue: CustomStringConvertible {
+    
+    public var allTasks: [AsyncTask] {
+        return lock.withLock { [unowned self] in
+            return executingQueue.rawData + pendingQueue.rawData
+        }
+    }
+    
+    public var description: String {
+        let tasks = allTasks.map { "\t\t\($0)" }.joined(separator: ",\n")
+        return """
+        \(type(of: self))<\(identifier)> : {
+        \tisSuspended: \(isSuspended),
+        \ttasks: [
+        \(tasks)
+        \t]
+        }
+        """
     }
 }
 

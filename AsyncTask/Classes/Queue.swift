@@ -43,13 +43,20 @@ extension Queue : ExpressibleByArrayLiteral {
     }
 }
 
+extension Queue: CustomDebugStringConvertible {
+    
+    var debugDescription: String { "\(list)" }
+}
+
 extension Queue {
+    
+    var rawData: [Element] { list }
     
     func forEach(_ body: (Element) throws -> Void) rethrows {
         try list.forEach(body)
     }
     
-    public mutating func sort(by areInIncreasingOrder: (Element, Element) throws -> Bool) rethrows {
+    mutating func sort(by areInIncreasingOrder: (Element, Element) throws -> Bool) rethrows {
         try list.sort(by: areInIncreasingOrder)
     }
 }
