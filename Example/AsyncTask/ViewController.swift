@@ -11,14 +11,14 @@ import AsyncTask
 
 class ViewController: UIViewController {
     
-    var queue: AsyncQueue?
+    var queue: AsyncTaskQueue?
 
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        AsyncQueue.isLogEnabled = true
-        queue = AsyncQueue()
+        AsyncTaskQueue.isLogEnabled = true
+        queue = AsyncTaskQueue()
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             let task = AlertTask(baseViewController: self, priority: .default)

@@ -16,11 +16,11 @@ public extension AsyncTask {
             self.rawValue = rawValue
         }
 
-        public static let background      = Self(rawValue: 0)
-        public static let low             = Self(rawValue: 250)
-        public static let `default`       = Self(rawValue: 500)
-        public static let hight           = Self(rawValue: 750)
-        public static let userInteractive = Self(rawValue: 1000)
+        public static let background    = Self(rawValue: 0)
+        public static let low           = Self(rawValue: 250)
+        public static let `default`     = Self(rawValue: 500)
+        public static let hight         = Self(rawValue: 750)
+        public static let required      = Self(rawValue: 1000)
     }
 }
 
@@ -28,7 +28,7 @@ extension AsyncTask.Priority {
     
     public static func + (lhs: Self, rhs: Int) -> Self {
         let priority = Self(rawValue: lhs.rawValue + rhs)
-        return min(priority, .userInteractive)
+        return min(priority, .required)
     }
     
     public static func - (lhs: Self, rhs: Int) -> Self {

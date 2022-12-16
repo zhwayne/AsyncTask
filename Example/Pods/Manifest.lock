@@ -1,5 +1,5 @@
 PODS:
-  - AsyncTask (0.1.1)
+  - AsyncTask (0.1.2)
 
 DEPENDENCIES:
   - AsyncTask (from `../`)
@@ -9,7 +9,7 @@ EXTERNAL SOURCES:
     :path: "../"
 
 SPEC CHECKSUMS:
-  AsyncTask: f12be292440a8b19f93884fc0afbb657629a013e
+  AsyncTask: 75cdfd648e08fa511eb93fa09215a7175173ee15
 
 PODFILE CHECKSUM: d779be475fda40b3e5198e9cae27f818f51a4842
 

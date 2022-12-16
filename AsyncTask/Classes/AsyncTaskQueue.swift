@@ -1,5 +1,5 @@
 //
-//  AsyncQueue.swift
+//  AsyncTaskQueue.swift
 //  AsyncTask
 //
 //  Created by 张尉 on 2021/9/17.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-public final class AsyncQueue {
+public final class AsyncTaskQueue {
     
     /// Enable log output.
     public static var isLogEnabled = false
@@ -19,10 +19,10 @@ public final class AsyncQueue {
     public private(set) var isSuspended = false
     
     /// All pending tasks are queued here for execution.
-    private var pendingQueue = Queue<AsyncTask>()
+    private var pendingQueue = Deque<AsyncTask>()
     
     /// The queue in which the task is being executed. Just one task.
-    private var executingQueue = Queue<AsyncTask>()
+    private var executingQueue = Deque<AsyncTask>()
     
     /// A resident thread used to perform tasks.
     private var thread: Thread!
@@ -40,7 +40,7 @@ public final class AsyncQueue {
             $0.cancel()
             logger("\($0) canceled.")
         }
-        logger("All pending \(pendingQueue.length) task(s) has been cancelled.")
+        logger("All pending \(pendingQueue.count) task(s) has been cancelled.")
         
         // Exit the runloop.
         isRunLoopWorking = false
@@ -110,7 +110,10 @@ public final class AsyncQueue {
             defer { logger("\(task) added.") }
 
             // Put the task in a pending queue.
-            pendingQueue.enqueue(task)
+            pendingQueue.append(task)
+            
+            // Reorder tasks waiting to be executed by priority.
+            pendingQueue.sort { $0.priority > $1.priority }
 
             // If the runloop is suspended, execution resumes after the task is added.
             if let runloop = runloop, !isSuspended, executingQueue.isEmpty {
@@ -126,17 +129,19 @@ public final class AsyncQueue {
         
         // Check whether there is a task being executed. If there is, this execution will be ignored
         // until the task is executed.
-        if let executingTask = executingQueue.peek() {
+        if let executingTask = executingQueue.first {
             if executingTask.state == .runing { throw ExexutingError.ignore(executingTask) }
             // Remove the task from pending qeueu.
-            executingQueue.dequeue()
+            executingQueue.removeFirst()
         }
         
         // Reorder tasks waiting to be executed by priority.
         pendingQueue.sort { $0.priority > $1.priority }
         
         // Checking has no tasks.
-        guard let task = pendingQueue.dequeue() else { throw ExexutingError.noTask }
+        guard !pendingQueue.isEmpty else { throw ExexutingError.noTask }
+        
+        let task = pendingQueue.removeFirst()
         
         // Check if the task has been canceled before execution
         guard task.state == .ready else { throw ExexutingError.taskHasCancelled(task) }
@@ -145,24 +150,26 @@ public final class AsyncQueue {
     }
     
     private func executeNext() throws {
-        // Obtain the task to be performed.
-        let task = try fetchNextTask()
-        logger("\(task) is about to be executed.")
-        
-        // Put the task in a executing queue.
-        executingQueue.enqueue(task)
-        
-        task.stateDidChange = { [weak self] task in
-            logger("\(task) has changed to \(task.state).")
-            if task.state == .finished || task.state == .canceled {
-                logger("Execute \(task) completion block.")
-                task.completion?(task.state)
-                if let runloop = self?.runloop {
-                    CFRunLoopStop(runloop)
+        try lock.withLockVoid {
+            // Obtain the task to be performed.
+            let task = try fetchNextTask()
+            logger("\(task) is about to be executed.")
+            
+            // Put the task in a executing queue.
+            executingQueue.append(task)
+            
+            task.stateDidChange = { [weak self] task in
+                logger("\(task) has changed to \(task.state).")
+                if task.state == .finished || task.state == .canceled {
+                    logger("Execute \(task) completion block.")
+                    task.completion?(task.state)
+                    if let runloop = self?.runloop {
+                        CFRunLoopStop(runloop)
+                    }
                 }
             }
+            task.execute()
         }
-        task.execute()
     }
     
     /// Cancel all waiting tasks.
@@ -196,11 +203,11 @@ public final class AsyncQueue {
     }
 }
 
-extension AsyncQueue: CustomStringConvertible {
+extension AsyncTaskQueue: CustomStringConvertible {
     
     public var allTasks: [AsyncTask] {
         return lock.withLock { [unowned self] in
-            return executingQueue.rawData + pendingQueue.rawData
+            return Array(executingQueue + pendingQueue)
         }
     }
     
@@ -217,7 +224,7 @@ extension AsyncQueue: CustomStringConvertible {
     }
 }
 
-extension AsyncQueue {
+extension AsyncTaskQueue {
     
     private enum ExexutingError: Error {
         case taskHasCancelled(AsyncTask)
@@ -229,7 +236,7 @@ extension AsyncQueue {
 
 
 private func logger(_ items: Any..., separator: String = " ", terminator: String = "\n") {
-    if AsyncQueue.isLogEnabled {
+    if AsyncTaskQueue.isLogEnabled {
         let time = String(format: "%.3f", CFAbsoluteTimeGetCurrent())
         print("\(time) [AsyncTask]", terminator: " ")
         print(items, separator: separator, terminator: terminator)
