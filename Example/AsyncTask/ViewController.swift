@@ -17,36 +17,45 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        // AsyncQueue.isLogEnabled = true
+        AsyncQueue.isLogEnabled = true
         queue = AsyncQueue()
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             let task = AlertTask(baseViewController: self, priority: .default)
-            self.queue?.add(task: task)
+            self.queue?.addTask(task)
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             let task = AlertTask(baseViewController: self, priority: .low)
-            self.queue?.add(task: task)
+            self.queue?.addTask(task)
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
             let task = AlertTask(baseViewController: self, priority: .default)
-            self.queue?.add(task: task)
+            self.queue?.addTask(task)
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
             let task = AlertTask(baseViewController: self, priority: .hight)
-            self.queue?.add(task: task)
+            self.queue?.addTask(task)
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
             let task = AlertTask(baseViewController: self, priority: .default + 100)
-            self.queue?.add(task: task)
+            self.queue?.addTask(task)
             print(self.queue!)
         }
     }
 
+    @IBAction func onAddButtonClick(_ sender: Any) {
+        let task = AlertTask(baseViewController: self, priority: .default)
+        queue?.addTask(task)
+    }
+    
+    @IBAction func onDistroyButtonClick(_ sender: Any) {
+        queue = nil
+    }
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.

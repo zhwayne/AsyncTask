@@ -15,7 +15,7 @@ open class AsyncTask {
     public let priority: Priority
     
     /// The block will be executed after the task is completed.
-    public var completion: (() -> Void)?
+    public var completion: ((State) -> Void)?
     
     public var isReady: Bool { state == .ready }
     
@@ -33,13 +33,14 @@ open class AsyncTask {
     
     private var isExecuted = false
     
-    private let code: (AsyncTask) -> Void
+    private let code: ((AsyncTask) -> Void)?
     
     private let semaphore = DispatchSemaphore(value: 0)
 
-    public init(priority: Priority = .default, _ code: @escaping (AsyncTask) -> Void = { _ in }) {
+    public init(priority: Priority, code: ((AsyncTask) -> Void)? = nil, completion: ((State) -> Void)? = nil) {
         self.priority = priority
         self.code = code
+        self.completion = completion
     }
     
     /// Mark task as ready.
@@ -55,7 +56,7 @@ open class AsyncTask {
         guard state == .ready else { return }
         isExecuted = true
         state = .runing
-        code(self)
+        code?(self)
     }
     
     /// Mark the task as completed.

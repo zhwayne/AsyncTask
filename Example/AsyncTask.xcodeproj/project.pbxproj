@@ -215,12 +215,12 @@
 				TargetAttributes = {
 					607FACCF1AFB9204008FA782 = {
 						CreatedOnToolsVersion = 6.3.1;
-						DevelopmentTeam = 5GPD4X2HE7;
+						DevelopmentTeam = BS4TL98W43;
 						LastSwiftMigration = 0900;
 					};
 					607FACE41AFB9204008FA782 = {
 						CreatedOnToolsVersion = 6.3.1;
-						DevelopmentTeam = 5GPD4X2HE7;
+						DevelopmentTeam = BS4TL98W43;
 						LastSwiftMigration = 1250;
 						TestTargetID = 607FACCF1AFB9204008FA782;
 					};
@@ -492,7 +492,7 @@
 			baseConfigurationReference = 8FC53E29187A727F9DFF6AD0 /* Pods-AsyncTask_Example.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				DEVELOPMENT_TEAM = 5GPD4X2HE7;
+				DEVELOPMENT_TEAM = BS4TL98W43;
 				INFOPLIST_FILE = AsyncTask/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MODULE_NAME = ExampleApp;
@@ -508,7 +508,7 @@
 			baseConfigurationReference = CDE17B8A1D134823BA5264B4 /* Pods-AsyncTask_Example.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				DEVELOPMENT_TEAM = 5GPD4X2HE7;
+				DEVELOPMENT_TEAM = BS4TL98W43;
 				INFOPLIST_FILE = AsyncTask/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MODULE_NAME = ExampleApp;
@@ -523,7 +523,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 11B9D943CDAF1075C1E28588 /* Pods-AsyncTask_Tests.debug.xcconfig */;
 			buildSettings = {
-				DEVELOPMENT_TEAM = 5GPD4X2HE7;
+				DEVELOPMENT_TEAM = BS4TL98W43;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
 					"$(inherited)",
