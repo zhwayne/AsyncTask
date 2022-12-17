@@ -9,12 +9,12 @@ import Foundation
 
 extension AsyncTask {
     
-    public struct LifeCycle {
+    public struct StateListener {
         
-        let didCompletion: (() -> Void)?
+        let block: ((State) -> Void)
         
-        public init(didCompletion: (() -> Void)?) {
-            self.didCompletion = didCompletion
+        public init(block: @escaping ((State) -> Void)) {
+            self.block = block
         }
     }
 }

@@ -14,8 +14,9 @@ open class AsyncTask {
     /// Tasks with high priority will be executed first. Once the task starts to execute, modifying the priority is invalid.
     public let priority: Priority
     
-    /// The block will be executed after the task is completed.
-    public var completion: ((State) -> Void)?
+    public let identifier: String
+    
+    var listeners = [StateListener]()
     
     public var isReady: Bool { state == .ready }
     
@@ -24,11 +25,11 @@ open class AsyncTask {
     public var isCanceled: Bool { state == .canceled }
     
     public var isFinished: Bool { state == .finished }
-    
-    var stateDidChange: ((AsyncTask) -> Void)?
-    
+        
     private(set) var state: State = .idle {
-        didSet { stateDidChange?(self) }
+        didSet {
+            listeners.forEach { $0.block(self.state) }
+        }
     }
     
     private var isExecuted = false
@@ -39,11 +40,15 @@ open class AsyncTask {
 
     public init(
         priority: Priority = .default,
-        code: ((AsyncTask) -> Void)? = nil,
-        completion: ((State) -> Void)? = nil) {
+        identifier: String = UUID().uuidString,
+        code: ((AsyncTask) -> Void)? = nil) {
         self.priority = priority
+        self.identifier = identifier
         self.code = code
-        self.completion = completion
+    }
+    
+    public func addListener(_ listener: StateListener) {
+        listeners.append(listener)
     }
     
     /// Mark task as ready.

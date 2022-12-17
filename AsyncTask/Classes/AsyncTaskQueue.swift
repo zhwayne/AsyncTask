@@ -105,6 +105,13 @@ public final class AsyncTaskQueue {
             // Only idle tasks can be added.
             guard task.state == .idle else { return }
             
+            // Check task duplication.
+            let allTasks = Array(executingQueue + pendingQueue)
+            if allTasks.contains(where: { $0.identifier == task.identifier }) {
+                logger("\(task) duplicated. This operation will be ignored.")
+                return
+            }
+            
             // Change task state to ready.
             task.ready()
             defer { logger("\(task) added.") }
@@ -115,7 +122,6 @@ public final class AsyncTaskQueue {
             // Reorder tasks waiting to be executed by priority.
             pendingQueue.sort { $0.priority > $1.priority }
 
-            // If the runloop is suspended, execution resumes after the task is added.
             if let runloop = runloop, !isSuspended, executingQueue.isEmpty {
                 CFRunLoopStop(runloop)
             }
@@ -158,16 +164,15 @@ public final class AsyncTaskQueue {
             // Put the task in a executing queue.
             executingQueue.append(task)
             
-            task.stateDidChange = { [weak self] task in
+            let listener = AsyncTask.StateListener(block: { [weak self] state in
                 logger("\(task) has changed to \(task.state).")
                 if task.state == .finished || task.state == .canceled {
-                    logger("Execute \(task) completion block.")
-                    task.completion?(task.state)
                     if let runloop = self?.runloop {
                         CFRunLoopStop(runloop)
                     }
                 }
-            }
+            })
+            task.listeners.insert(listener, at: 0)
             task.execute()
         }
     }
