@@ -165,14 +165,15 @@ public final class AsyncTaskQueue {
             executingQueue.append(task)
             
             let listener = AsyncTask.StateListener(block: { [weak self] state in
-                logger("\(task) has changed to \(task.state).")
-                if task.state == .finished || task.state == .canceled {
+                logger("task has changed to \(state).")
+                if state == .finished || state == .canceled {
+                    self?.executingQueue.removeFirst()
                     if let runloop = self?.runloop {
                         CFRunLoopStop(runloop)
                     }
                 }
             })
-            task.listeners.insert(listener, at: 0)
+            task.listeners.append(listener)
             task.execute()
         }
     }
