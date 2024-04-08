@@ -12,7 +12,7 @@ public extension AsyncTask {
     enum State {
         case idle
         case ready
-        case runing
+        case running
         case canceled
         case finished
     }

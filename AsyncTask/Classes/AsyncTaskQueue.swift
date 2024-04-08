@@ -1,5 +1,5 @@
 //
-//  AsyncTaskQueue.swift
+//  BleOperationQueue.swift
 //  AsyncTask
 //
 //  Created by 张尉 on 2021/9/17.
@@ -20,10 +20,10 @@ public final class AsyncTaskQueue {
     public private(set) var isSuspended = false
     
     /// All pending tasks are queued here for execution.
-    private var pendingQueue = Deque<AsyncTask>()
+    private var pendingQueue = Array<AsyncTask>()
     
     /// The queue in which the task is being executed. Just one task.
-    private var executingQueue = Deque<AsyncTask>()
+    private var executingQueue = Array<AsyncTask>()
     
     /// A resident thread used to perform tasks.
     private var thread: Thread!
@@ -38,54 +38,10 @@ public final class AsyncTaskQueue {
     deinit {
         // Cancels all outstanding tasks.
         cancelAll()
-        
-        // Exit the runloop.
-        isRunLoopWorking = false
-        if let runloop = runloop {
-            CFRunLoopStop(runloop)
-        }
     }
-
-    public init(qos: QualityOfService = .default) {
-        thread = Thread(block: { [weak self] in
-            logger("Runloop start.")
-            let runloop = CFRunLoopGetCurrent()
-            var sourceCtx = CFRunLoopSourceContext()
-            let source = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &sourceCtx)
-            CFRunLoopAddSource(runloop, source, .commonModes)
-            self?.runloop = runloop
-            defer {
-                CFRunLoopRemoveSource(runloop, source, .commonModes)
-                logger("Runloop destroyed.")
-            }
-            
-            while case let working = self?.isRunLoopWorking, working == true {
-                CFRunLoopRunInMode(.defaultMode, 0.016, true)
-                logger("Async queue will going to execute next task.")
-                do {
-                    if let task = try self?.executeNext(), task.isExecuting {
-                        logger("Waiting for \(task) to end.")
-                        CFRunLoopRun()
-                    }
-                } catch ExexutingError.suspend {
-                    logger("Queue is suspended.")
-                    CFRunLoopRun()
-                } catch ExexutingError.ignore(let task) {
-                    logger("\(task) is still executing. this operation will be ignored. Waiting for the task to end.")
-                    CFRunLoopRun()
-                } catch ExexutingError.noTask {
-                    logger("There are no tasks waiting to be executed. Waiting for new tasks to be added.")
-                    CFRunLoopRun()
-                } catch ExexutingError.taskHasCancelled(let task) {
-                    logger("\(task) has been canceled.")
-                } catch {
-                    logger("Catch unknown error: \(error)")
-                }
-            }
-        })
-        thread.name = "com.zhwayne.AsyncTaskThread"
-        thread.qualityOfService = qos
-        thread.start()
+    
+    public init() {
+        
     }
     
     /// Add a task to be executed. If there is an unfinished task in the execution queue or an unstarted
@@ -103,19 +59,25 @@ public final class AsyncTaskQueue {
                 return
             }
             
+            task.addListener(AsyncTask.StateListener(block: { state in
+                logger("\(task) state changes to \(state).")
+            }))
+            
             // Change task state to ready.
             task.ready()
-            defer { logger("\(task) added.") }
+            task.delegate = self
             
             // Put the task in a pending queue.
             pendingQueue.append(task)
             
             // Reorder tasks waiting to be executed by priority.
             pendingQueue.sort { $0.priority > $1.priority }
-            
-            if let runloop = runloop, !isSuspended, executingQueue.isEmpty {
-                CFRunLoopStop(runloop)
-            }
+        }
+        
+        logger("\(task) added.")
+        
+        if !isSuspended {
+            start()
         }
     }
     
@@ -127,7 +89,7 @@ public final class AsyncTaskQueue {
         // Check whether there is a task being executed. If there is, this execution will be ignored
         // until the task is executed.
         if let executingTask = executingQueue.first {
-            if executingTask.state == .runing { throw ExexutingError.ignore(executingTask) }
+            if executingTask.state == .running { throw ExexutingError.ignore(executingTask) }
             // Remove the task from pending qeueu.
             executingQueue.removeFirst()
         }
@@ -148,38 +110,41 @@ public final class AsyncTaskQueue {
     
     @discardableResult
     private func executeNext() throws -> AsyncTask {
-        try lock.withLock {
-            // Obtain the task to be performed.
-            let task = try fetchNextTask()
-            logger("\(task) is about to be executed.")
-            
-            // Put the task in a executing queue.
-            executingQueue.append(task)
-            
-            let listener = AsyncTask.StateListener(block: { [weak self] state in
-                logger("Task has changed to \(state).")
-                if state == .finished || state == .canceled {
-                    self?.executingQueue.removeFirst()
-                    if let runloop = self?.runloop {
-                        CFRunLoopStop(runloop)
-                    }
-                }
-            })
-            task.listeners.append(listener)
-            task.execute()
-            return task
+        // Obtain the task to be performed.
+        let task = try fetchNextTask()
+        
+        // Put the task in a executing queue.
+        executingQueue.append(task)
+        task.execute()
+        return task
+    }
+    
+    private func start() {
+        do {
+            try executeNext()
+        } catch ExexutingError.suspend {
+            logger("Queue is suspended.")
+        } catch ExexutingError.ignore(let task) {
+            logger("\(task) is still executing. this operation will be ignored. Waiting for the task to end.")
+        } catch ExexutingError.noTask {
+            logger("There are no tasks waiting to be executed. Waiting for new tasks to be added.")
+        } catch ExexutingError.taskHasCancelled(let task) {
+            logger("\(task) has been canceled.")
+        } catch {
+            logger("Catch unknown error: \(error)")
         }
     }
     
-    /// Cancel all waiting tasks.
-    public func cancelAll() {
-        lock.withLockVoid { [unowned self] in
+    /// Cancel all tasks.
+    func cancelAll(error: Error? = nil) {
+        lock.withLockVoid { [weak self] in
+            guard let self else { return }
             pendingQueue.forEach {
-                $0.cancel()
+                $0.cancel(error: error)
             }
             pendingQueue = []
             executingQueue.forEach {
-                $0.cancel()
+                $0.cancel(error: error)
             }
             logger("All tasks canceled.")
         }
@@ -187,20 +152,28 @@ public final class AsyncTaskQueue {
     
     /// Suspends the execution queue, and the waiting tasks will be consistently blocked until the
     /// queue is resumed. Tasks in progress are not affected.
-    public func suspend() {
+    func suspend() {
         lock.withLockVoid { [unowned self] in
             isSuspended = true
         }
     }
     
     /// Resume current suspended execution queue.
-    public func resume() {
+    func resume() {
         lock.withLockVoid { [unowned self] in
             if isSuspended {
                 isSuspended = false
-                CFRunLoopStop(runloop)
             }
         }
+        start()
+    }
+}
+
+extension AsyncTaskQueue: AsyncTaskDelegate {
+    
+    func taskDidFinishOrCancell(_ task: AsyncTask) {
+        executingQueue = []
+        start()
     }
 }
 

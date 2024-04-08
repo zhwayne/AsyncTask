@@ -11,8 +11,8 @@ public extension AsyncTask {
     
     /// 任务优先级
     struct Priority {
-        fileprivate var rawValue: Int = 0
-        fileprivate init(rawValue: Int) {
+        var rawValue: Int = 0
+        init(rawValue: Int) {
             self.rawValue = rawValue
         }
 
